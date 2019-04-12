@@ -16,11 +16,12 @@ and mapping copied.
 
 Usage:
 
-  #{__FILE__} [-r] [-f <frame>] [source_url/]<index> [destination_url/]<index>
+  #{__FILE__} [-r] [-f <frame>] [-u] [-y] [source_url/]<index> [destination_url/]<index>
 
     - -r - remove the index in the new location first
     - -f - specify frame size to be obtained with one fetch during scrolling
     - -u - update existing documents (default: only create non-existing)
+    - -y - do not prompt for confirmation
     - optional source/destination urls default to http://127.0.0.1:9200
 \n"
   exit 1
@@ -28,13 +29,14 @@ end
 
 Oj.default_options = {:mode => :compat}
 
-remove, update, frame, src, dst = false, false, 1000, nil, nil
+remove, update, doit, frame, src, dst = false, false, false, 1000, nil, nil
 
 while ARGV[0]
   case arg = ARGV.shift
   when '-r' then remove = true
   when '-f' then frame = ARGV.shift.to_i
   when '-u' then update = true
+  when '-y' then doit = true
   else
     u = arg.chomp '/'
     !src ? (src = u) : !dst ? (dst = u) :
@@ -52,13 +54,16 @@ surl, durl, sidx, didx = '', '', '', ''
     idx.replace param
   end
 end
-printf "Copying '%s/%s' to '%s/%s'%s\n  Confirm or hit Ctrl-c to abort...\n",
+printf "Copying '%s/%s' to '%s/%s'%s\n",
   surl, sidx, durl, didx,
   remove ?
     ' with rewriting destination mapping!' :
     update ? ' with updating existing documents!' : '.'
 
-$stdin.readline
+unless doit
+  printf "  Confirm or hit Ctrl-c to abort...\n"
+  $stdin.readline
+end
 
 def tm_len l
   t = []
